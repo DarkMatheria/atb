@@ -18,7 +18,7 @@ cd atb & pip install .
 # test use
 ``` python
 import asyncio
-from atb import *
+from main.atb import *
 
 API_TOKEN = ""
 
