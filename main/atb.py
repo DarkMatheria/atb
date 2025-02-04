@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import json
 from functools import wraps
+import re
 
 class Bot:
     def __init__(self, token):
@@ -75,6 +76,40 @@ class CallbackQuery:
     async def answer(self, text=None):
         return await self.bot.answer_callback_query(self.id, text)
 
+class ContentType:
+    photo = "photo"
+    video = "video"
+    music = "audio"
+    file = "document"
+    voice = "voice"
+    cvm = "video_note"
+    media = {photo, video, music, file, voice, cvm}
+
+class F:
+    @staticmethod
+    def text(value):
+        return lambda message: message.text == value
+
+    @staticmethod
+    def from_user_id(user_id):
+        return lambda message: message.from_user and message.from_user.id == user_id
+
+    @staticmethod
+    def chat_type(chat_type):
+        return lambda message: message.message_data["chat"]["type"] == chat_type
+
+    @staticmethod
+    def data(value):
+        return lambda callback_query: callback_query.data == value
+
+    @staticmethod
+    def contains(value):
+        return lambda message: value in message.text
+
+    @staticmethod
+    def startswith(value):
+        return lambda message: message.text.startswith(value)
+
 class Decorator:
     def __init__(self, bot):
         self.bot = bot
@@ -82,32 +117,35 @@ class Decorator:
         self.callback_handlers = []
         self.text_handlers = []
 
-    def handler(self, command=None):
+    def handler(self, command=None, filter=None):
         def decorator(func):
             @wraps(func)
             async def wrapper(message):
                 if command is None or message.text.startswith(command):
-                    await func(message)
+                    if filter is None or filter(message):
+                        await func(message)
             self.handlers.append(wrapper)
             return wrapper
         return decorator
 
-    def callback(self, condition=None):
+    def callback(self, condition=None, filter=None):
         def decorator(func):
             @wraps(func)
             async def wrapper(callback_query, bot):
                 if condition is None or condition(CallbackQuery(callback_query, bot)):
-                    await func(CallbackQuery(callback_query, bot))
+                    if filter is None or filter(callback_query):
+                        await func(CallbackQuery(callback_query, bot))
             self.callback_handlers.append(wrapper)
             return wrapper
         return decorator
 
-    def text(self, condition=None):
+    def text(self, condition=None, filter=None):
         def decorator(func):
             @wraps(func)
             async def wrapper(message):
                 if condition is None or condition(message):
-                    await func(message)
+                    if filter is None or filter(message):
+                        await func(message)
             self.text_handlers.append(wrapper)
             return wrapper
         return decorator
@@ -156,7 +194,6 @@ class ReplyMarkup:
             "one_time_keyboard": self.one_time_keyboard
         }
 
-
 class ReplyButton:
     def __init__(self, text, request_contact=False, request_location=False):
         self.button = {"text": text}
@@ -175,17 +212,47 @@ class Message:
         self.chat_id = message_data["chat"]["id"]
         self.message_id = message_data["message_id"]
         self.text = message_data.get("text", "")
+        self.from_user = User(message_data.get("from", {})) if "from" in message_data else None
 
     async def send(self, text, reply_markup=None):
         if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
             reply_markup = reply_markup.to_dict()
         elif isinstance(reply_markup, InlineButton):
             reply_markup = reply_markup.to_dict()
-        return await self.bot.send_message(self.chat_id, text, reply_markup)
+        return await self.bot.send_message(
+            self.chat_id,
+            text,
+            reply_markup=reply_markup,
+        )
 
     async def reply(self, text, reply_markup=None):
         if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
             reply_markup = reply_markup.to_dict()
         elif isinstance(reply_markup, InlineButton):
             reply_markup = reply_markup.to_dict()
-        return await self.bot.send_message(self.chat_id, text, reply_markup)
+        return await self.bot.send_message(
+            self.chat_id,
+            text,
+            reply_markup=reply_markup,
+        )
+
+class User:
+    def __init__(self, user_data):
+        self.user_data = user_data
+        self.id = user_data.get("id")
+        self.first_name = user_data.get("first_name", "")
+        self.last_name = user_data.get("last_name", "")
+        self.username = user_data.get("username", "")
+        self.language_code = user_data.get("language_code", "")
+
+    @property
+    def mention(self):
+        if self.username:
+            return f"@{self.username}"
+        elif self.first_name:
+            return f"[{self.first_name}](tg://user?id={self.id})"
+        else:
+            return print("Unknown parameter for user(check your code)")
+
+    def __str__(self):
+        return self.mention
