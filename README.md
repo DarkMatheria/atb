@@ -13,7 +13,7 @@ Version: 0.1
 - Added callback query  
 - Added inlinebutton & inlinemarkup (miniapp include)  
 - Added replybutton & replymarkup
-
+- Added Media decorators and Media sends
 # Installing (locally)
 
 ```sh
