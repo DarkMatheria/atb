@@ -1,5 +1,5 @@
 # atb
-![Лого](images/AtB.png)
+![LOGO](images/AtB.png)
 
 ATB is free-use library for developing telegram bots  
 The abbreviation ATB means asyncio telegram bot  
