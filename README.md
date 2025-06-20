@@ -21,3 +21,5 @@ cd atb & pip install .
 ```
 # Tests
 All tests in tests folder.
+# License
+Project using custom license. see the LICENSE.md
