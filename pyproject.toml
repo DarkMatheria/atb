@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "atb"
-version = "0.1"
+version = "1.0.1"
 description = "free use library for interaction with telegram api via http"
 authors = [
     { name = "Dark Mathery" }
