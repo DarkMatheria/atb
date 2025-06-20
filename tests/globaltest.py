@@ -1,5 +1,5 @@
 import asyncio
-from atb.main.atb import *
+from main.atb import *
 
 API_TOKEN = ""
 
