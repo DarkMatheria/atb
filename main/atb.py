@@ -11,6 +11,7 @@ class Bot:
         self.handlers = []
         self.callback_handlers = []
         self.text_handlers = []
+        self.media_handlers = []
         self.start_time = None
         self.error_handled = False
     async def get_updates(self, offset=None, timeout=30):
@@ -39,6 +40,106 @@ class Bot:
             async with session.post(url, params=params) as response:
                 return await response.json()
 
+    async def send_photo(self, chat_id, photo, caption=None, reply_markup=None):
+        url = self.base_url + "sendPhoto"
+        params = {"chat_id": chat_id, "photo": photo}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_video(self, chat_id, video, caption=None, reply_markup=None):
+        url = self.base_url + "sendVideo"
+        params = {"chat_id": chat_id, "video": video}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_audio(self, chat_id, audio, caption=None, reply_markup=None):
+        url = self.base_url + "sendAudio"
+        params = {"chat_id": chat_id, "audio": audio}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_document(self, chat_id, document, caption=None, reply_markup=None):
+        url = self.base_url + "sendDocument"
+        params = {"chat_id": chat_id, "document": document}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_voice(self, chat_id, voice, caption=None, reply_markup=None):
+        url = self.base_url + "sendVoice"
+        params = {"chat_id": chat_id, "voice": voice}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_video_note(self, chat_id, video_note, reply_markup=None):
+        url = self.base_url + "sendVideoNote"
+        params = {"chat_id": chat_id, "video_note": video_note}
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_sticker(self, chat_id, sticker, reply_markup=None):
+        url = self.base_url + "sendSticker"
+        params = {"chat_id": chat_id, "sticker": sticker}
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_media_group(self, chat_id, media):
+        url = self.base_url + "sendMediaGroup"
+        params = {"chat_id": chat_id, "media": json.dumps(media)}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_location(self, chat_id, latitude, longitude, reply_markup=None):
+        url = self.base_url + "sendLocation"
+        params = {"chat_id": chat_id, "latitude": latitude, "longitude": longitude}
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
+    async def send_animation(self, chat_id, animation, caption=None, reply_markup=None):
+        url = self.base_url + "sendAnimation"
+        params = {"chat_id": chat_id, "animation": animation}
+        if caption:
+            params["caption"] = caption
+        if reply_markup:
+            params["reply_markup"] = json.dumps(reply_markup)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params) as response:
+                return await response.json()
+
     async def run(self, decorator, su=False, nm=False):
         self.start_time = asyncio.get_event_loop().time() if su else None
         last_update_id = None
@@ -52,6 +153,8 @@ class Bot:
                         for handler in decorator.handlers:
                             await handler(message)
                         for handler in decorator.text_handlers:
+                            await handler(message)
+                        for handler in decorator.media_handlers:
                             await handler(message)
                     elif "callback_query" in update:
                         callback_query = update["callback_query"]
@@ -83,7 +186,10 @@ class ContentType:
     file = "document"
     voice = "voice"
     cvm = "video_note"
-    media = {photo, video, music, file, voice, cvm}
+    sticker = "sticker"
+    animation = "animation"
+    location = "location"
+    media = {photo, video, music, file, voice, cvm, sticker, animation, location}
 
 class F:
     @staticmethod
@@ -116,6 +222,7 @@ class Decorator:
         self.handlers = []
         self.callback_handlers = []
         self.text_handlers = []
+        self.media_handlers = []
 
     def handler(self, command=None, filter=None):
         def decorator(func):
@@ -147,6 +254,16 @@ class Decorator:
                     if filter is None or filter(message):
                         await func(message)
             self.text_handlers.append(wrapper)
+            return wrapper
+        return decorator
+
+    def media_handler(self, content_type=None):
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(message):
+                if message.content_type != "text" and (content_type is None or message.content_type == content_type):
+                    await func(message)
+            self.media_handlers.append(wrapper)
             return wrapper
         return decorator
 
@@ -214,6 +331,47 @@ class Message:
         self.text = message_data.get("text", "")
         self.from_user = User(message_data.get("from", {})) if "from" in message_data else None
 
+        self.content_type = None
+        self.photo = None
+        self.video = None
+        self.audio = None
+        self.document = None
+        self.voice = None
+        self.video_note = None
+        self.sticker = None
+        self.animation = None
+        self.location = None
+        
+        if "photo" in message_data:
+            self.content_type = ContentType.photo
+            self.photo = message_data["photo"]
+        elif "video" in message_data:
+            self.content_type = ContentType.video
+            self.video = message_data["video"]
+        elif "audio" in message_data:
+            self.content_type = ContentType.music
+            self.audio = message_data["audio"]
+        elif "document" in message_data:
+            self.content_type = ContentType.file
+            self.document = message_data["document"]
+        elif "voice" in message_data:
+            self.content_type = ContentType.voice
+            self.voice = message_data["voice"]
+        elif "video_note" in message_data:
+            self.content_type = ContentType.cvm
+            self.video_note = message_data["video_note"]
+        elif "sticker" in message_data:
+            self.content_type = ContentType.sticker
+            self.sticker = message_data["sticker"]
+        elif "animation" in message_data:
+            self.content_type = ContentType.animation
+            self.animation = message_data["animation"]
+        elif "location" in message_data:
+            self.content_type = ContentType.location
+            self.location = message_data["location"]
+        elif "text" in message_data:
+            self.content_type = "text"
+
     async def send(self, text, reply_markup=None):
         if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
             reply_markup = reply_markup.to_dict()
@@ -236,6 +394,54 @@ class Message:
             reply_markup=reply_markup,
         )
 
+    async def send_photo(self, photo, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_photo(self.chat_id, photo, caption, reply_markup)
+
+    async def send_video(self, video, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_video(self.chat_id, video, caption, reply_markup)
+
+    async def send_audio(self, audio, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_audio(self.chat_id, audio, caption, reply_markup)
+
+    async def send_document(self, document, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_document(self.chat_id, document, caption, reply_markup)
+
+    async def send_voice(self, voice, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_voice(self.chat_id, voice, caption, reply_markup)
+
+    async def send_video_note(self, video_note, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_video_note(self.chat_id, video_note, reply_markup)
+
+    async def send_sticker(self, sticker, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_sticker(self.chat_id, sticker, reply_markup)
+
+    async def send_media_group(self, media):
+        return await self.bot.send_media_group(self.chat_id, media)
+
+    async def send_location(self, latitude, longitude, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_location(self.chat_id, latitude, longitude, reply_markup)
+
+    async def send_animation(self, animation, caption=None, reply_markup=None):
+        if isinstance(reply_markup, (InlineMarkup, ReplyMarkup)):
+            reply_markup = reply_markup.to_dict()
+        return await self.bot.send_animation(self.chat_id, animation, caption, reply_markup)
+
 class User:
     def __init__(self, user_data):
         self.user_data = user_data
@@ -256,3 +462,4 @@ class User:
 
     def __str__(self):
         return self.mention
+
