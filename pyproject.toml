@@ -7,8 +7,12 @@ name = "atb"
 version = "0.1"
 description = "free use library for interaction with telegram api via http"
 authors = [
-    { name = "Dark Matheria" }
+    { name = "Dark Mathery" }
 ]
 dependencies = [
     "aiohttp",
 ]
+
+[tool.setuptools.packages.find]
+include = ["main"]
+exclude = ["images", "tests"]
