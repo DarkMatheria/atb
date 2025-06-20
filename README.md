@@ -3,7 +3,7 @@
 
 ATB is free-use library for developing telegram bots  
 The abbreviation ATB means asyncio telegram bot  
-Version: 0.1
+Version: 1.0.1
 
 # Changelog
 
