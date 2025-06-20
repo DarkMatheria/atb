@@ -13,5 +13,5 @@ DarkMatheria and the other developers of this project do not take any responsibi
 
 ## Reporting a Vulnerability
 
-Report all vulnerabilities by opening issues in **this** project only (not in forks).  
+Report all vulnerabilities by opening issues or opening security advisore in this project only (not in forks).  
 Issues related to forks will be closed without review.
