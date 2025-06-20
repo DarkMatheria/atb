@@ -1,7 +1,7 @@
 import asyncio
 from atb.main.atb import *
 
-API_TOKEN = "7597375886:AAGxEpXIc_PZxVYprI0Tui2ClWfxsNkhJzU"
+API_TOKEN = ""
 
 bot = Bot(API_TOKEN)
 decorator = Decorator(bot)
